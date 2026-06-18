@@ -11,8 +11,11 @@ SYSTEM_PROMPT = (
     "Cite the source document and page for each fact you use."
 )
 
-# below this similarity score, a retrieved chunk is treated as irrelevant
-MIN_SCORE = 0.35
+# below this similarity score a chunk is treated as irrelevant (filters obvious off-topic queries)
+MIN_SCORE = 0.45
+
+# if the model's answer starts with one of these, treat it as a refusal and hide sources
+REFUSAL_MARKERS = ("i don't know", "i do not know", "don't know")
 
 
 # stitch the retrieved chunks and the question into one prompt
@@ -22,6 +25,11 @@ def build_prompt(question, hits):
         blocks.append(f"[{c.source} p.{c.page}]\n{c.text}")
     context = "\n\n---\n\n".join(blocks)
     return f"Context:\n{context}\n\nQuestion: {question}\n\nAnswer:"
+
+
+def is_refusal(answer):
+    a = answer.strip().lower()
+    return any(a.startswith(m) for m in REFUSAL_MARKERS)
 
 
 class RagPipeline:
@@ -34,14 +42,20 @@ class RagPipeline:
     def answer(self, question):
         q_vec = self.embedder.embed_query(question)
         hits = self.store.search(q_vec, self.cfg.top_k)
-        # keep only chunks that are actually similar to the question
+
+        # drop clearly irrelevant chunks
         hits = [(s, c) for s, c in hits if s >= MIN_SCORE]
 
-        # nothing relevant retrieved -> don't call the model, don't show sources
+        # nothing relevant -> don't call the model, don't show sources
         if not hits:
             return "I don't know — I couldn't find anything relevant in the documents.", []
 
         prompt = build_prompt(question, hits)
         answer = self.llm.generate(prompt, system=SYSTEM_PROMPT)
+
+        # if the model couldn't answer from the chunks, don't show misleading sources
+        if is_refusal(answer):
+            return answer, []
+
         sources = [c for _, c in hits]
         return answer, sources
