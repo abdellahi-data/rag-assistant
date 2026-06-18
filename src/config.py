@@ -29,5 +29,8 @@ class Config:
     chunk_overlap: int = field(default_factory=lambda: int(env("CHUNK_OVERLAP", "150")))
     top_k: int = field(default_factory=lambda: int(env("TOP_K", "4")))
 
+    pdf_dir: str = field(default_factory=lambda: env("PDF_DIR", "data/pdfs"))
+    index_dir: str = field(default_factory=lambda: env("INDEX_DIR", "data/index"))
+
 
 config = Config()
