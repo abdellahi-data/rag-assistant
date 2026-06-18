@@ -11,8 +11,9 @@ SYSTEM_PROMPT = (
     "Cite the source document and page for each fact you use."
 )
 
-# below this similarity score a chunk is treated as irrelevant (filters obvious off-topic queries)
-MIN_SCORE = 0.45
+# below this similarity score a chunk is treated as irrelevant.
+# this is embedding-model-specific. set to 0.1 FOR Titan's score range.
+MIN_SCORE = 0.1
 
 # if the model's answer starts with one of these, treat it as a refusal and hide sources
 REFUSAL_MARKERS = ("i don't know", "i do not know", "don't know")
@@ -59,3 +60,4 @@ class RagPipeline:
 
         sources = [c for _, c in hits]
         return answer, sources
+    
