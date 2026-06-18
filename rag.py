@@ -11,6 +11,9 @@ SYSTEM_PROMPT = (
     "Cite the source document and page for each fact you use."
 )
 
+# below this similarity score, a retrieved chunk is treated as irrelevant
+MIN_SCORE = 0.35
+
 
 # stitch the retrieved chunks and the question into one prompt
 def build_prompt(question, hits):
@@ -26,12 +29,19 @@ class RagPipeline:
         self.cfg = cfg
         self.embedder = get_embedder(cfg)
         self.llm = get_llm(cfg)
-        self.store = FaissVectorStore.load(cfg.index_dir)   # load the index built by ingest.py
+        self.store = FaissVectorStore.load(cfg.index_dir)
 
     def answer(self, question):
-        q_vec = self.embedder.embed_query(question)         # 1. question -> vector
-        hits = self.store.search(q_vec, self.cfg.top_k)     # 2. find closest chunks
-        prompt = build_prompt(question, hits)               # 3. build grounded prompt
-        answer = self.llm.generate(prompt, system=SYSTEM_PROMPT)  # 4. ask the model
+        q_vec = self.embedder.embed_query(question)
+        hits = self.store.search(q_vec, self.cfg.top_k)
+        # keep only chunks that are actually similar to the question
+        hits = [(s, c) for s, c in hits if s >= MIN_SCORE]
+
+        # nothing relevant retrieved -> don't call the model, don't show sources
+        if not hits:
+            return "I don't know — I couldn't find anything relevant in the documents.", []
+
+        prompt = build_prompt(question, hits)
+        answer = self.llm.generate(prompt, system=SYSTEM_PROMPT)
         sources = [c for _, c in hits]
         return answer, sources
