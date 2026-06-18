@@ -11,12 +11,13 @@ def main():
         while True:
             q = input("you > ").strip()
             if not q:
-                continue                       # ignore empty input
+                continue
             answer, sources = pipe.answer(q)
             print(f"\nbot > {answer}\n")
-            # show unique source citations, sorted
-            cites = sorted({f"{s.source} p.{s.page}" for s in sources})
-            print("      sources: " + ", ".join(cites) + "\n")
+            # only show the sources line when there actually are sources
+            if sources:
+                cites = sorted({f"{s.source} p.{s.page}" for s in sources})
+                print("      sources: " + ", ".join(cites) + "\n")
     except (KeyboardInterrupt, EOFError):
         print("\nbye.")
 
