@@ -8,3 +8,10 @@ data/index/
 .DS_Store
 voltaris-pdfs.zip
 pdfs/
+
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
