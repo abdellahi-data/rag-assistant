@@ -5,8 +5,6 @@ Built to run identically on a local open-source stack (Ollama) or on AWS
 (Amazon Bedrock), switchable by configuration, not code and deploys to AWS Lambda
 as a containerized service provisioned with Terraform.
 
-> Status: local and cloud pipeline working. Deployment (API, Terraform, CI/CD) in progress.
-
 ---
 
 ## What it does
@@ -111,9 +109,8 @@ docker build --platform linux/amd64 -t rag-assistant .
 cd terraform
 terraform init
 terraform apply
-```
+``` 
 
-```
 
 ---
 
