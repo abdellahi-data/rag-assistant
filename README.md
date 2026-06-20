@@ -2,7 +2,8 @@
 
 A retrieval-augmented question-answering system over a corpus of company PDFs.
 Built to run identically on a local open-source stack (Ollama) or on AWS
-(Amazon Bedrock), switchable by configuration, not code.
+(Amazon Bedrock), switchable by configuration, not code and deploys to AWS Lambda
+as a containerized service provisioned with Terraform.
 
 > Status: local and cloud pipeline working. Deployment (API, Terraform, CI/CD) in progress.
 
@@ -50,7 +51,10 @@ vectorstore.py         VectorStore + FAISS implementation
 ingest.py              PDFs to chunks to embeddings to index
 rag.py                 retrieve, build grounded prompt, answer
 chat.py                terminal chat loop
+api.py                 FastAPI service (/ask, /health)
 run_eval.py            evaluation harness
+Dockerfile             container image (runs locally and on Lambda)
+terraform/             AWS infrastructure as code
 data/pdfs/             source documents
 ```
 ![test bedrock](docs/archi-services.png)
@@ -75,7 +79,14 @@ python -m chat
 
 ## Running on AWS Bedrock
 
-<!-- TODO: expand: credentials, model access, inference profile -->
+Run the API locally instead of the terminal chat:
+
+```bash
+uvicorn api:app --reload
+# then POST to http://127.0.0.1:8000/ask, or open /docs
+```
+
+## Running on AWS Bedrock
 
 Set the providers to `bedrock` in `.env`, then re-ingest (the embedding model
 changes, so the index must be rebuilt):
@@ -84,6 +95,24 @@ changes, so the index must be rebuilt):
 # .env: LLM_PROVIDER=bedrock, EMBEDDING_PROVIDER=bedrock
 python -m ingest
 python -m chat
+```
+
+## Deploying to AWS (Lambda + Terraform)
+
+The app is containerized and deployed to AWS Lambda behind a public Function
+URL, with all infrastructure defined in `terraform/`.
+
+```bash
+# build for lambda's architecture and push to ECR
+docker build --platform linux/amd64 -t rag-assistant .
+# (ecr login + tag + push)
+
+# provision ECR, Lambda, IAM, and the function URL
+cd terraform
+terraform init
+terraform apply
+```
+
 ```
 
 ---
@@ -105,5 +134,8 @@ python -m run_eval
 
 
 - Similarity thresholds are embedding-model-specific and must be retuned when the embedder changes.
-- correctness vs quality (8/8 both, but answer quality differed) -->
+- correctness vs quality (8/8 both, but answer quality differed) --> A substring-based eval shows both models are
+  equally *correct* (8/8) on factual lookups, but does not capture answer *quality*: the local 3B model often buried or hedged correct answers, while Claude Haiku stated them cleanly.
+- The same Docker image runs locally and on Lambda via the AWS Lambda Web
+  Adapter, with no Lambda-specific code.
 
