@@ -114,6 +114,24 @@ terraform apply
 
 ---
 
+## CI/CD
+
+Two GitHub Actions workflows automate testing and deployment:
+
+- **CI** (`.github/workflows/ci.yml`) runs on every pull request: builds the
+  index and runs the eval. A failing eval exits non-zero and blocks the merge,
+  acting as a quality gate.
+- **CD** (`.github/workflows/cd.yml`) runs on merge to `main`: builds the
+  index, builds and pushes the image to ECR, and updates the Lambda.
+
+So a push to a branch is tested via PR, and merging to `main` deploys
+automatically. App/code changes deploy through CD; infrastructure changes are
+applied manually via `terraform apply`.
+
+![test bedrock](docs/archi-services.png)
+
+---
+
 ## Evaluation
 
 A test script runs a fixed set of questions and checks each answer:
@@ -135,4 +153,16 @@ python -m run_eval
   equally *correct* (8/8) on factual lookups, but does not capture answer *quality*: the local 3B model often buried or hedged correct answers, while Claude Haiku stated them cleanly.
 - The same Docker image runs locally and on Lambda via the AWS Lambda Web
   Adapter, with no Lambda-specific code.
+- The FAISS index is gitignored, so the CI/CD pipeline
+  rebuilds it from the committed PDFs before building the image.
+
+
+# Next improvements
+
+- Move the index to Amazon S3 / OpenSearch Serverless so the container doesn't
+  bake it in.
+- Tighten the Bedrock IAM policy from `*` to the specific model ARNs (least
+  privilege).
+- Switch CI/CD AWS auth from access keys to OIDC (penID Connect). This a way for GitHub Actions to authenticate to AWS without storing keys as secrets as it is currently done.
+
 
