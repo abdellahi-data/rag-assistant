@@ -1,0 +1,44 @@
+# CI: on every pull request, build the index and run the eval as a quality check.
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Build the index (Bedrock embeddings)
+        env:
+          EMBEDDING_PROVIDER: bedrock
+          LLM_PROVIDER: bedrock
+          BEDROCK_LLM_MODEL: eu.anthropic.claude-haiku-4-5-20251001-v1:0
+          BEDROCK_EMBED_MODEL: amazon.titan-embed-text-v2:0
+        run: python -m ingest
+
+      - name: Run evaluation
+        env:
+          EMBEDDING_PROVIDER: bedrock
+          LLM_PROVIDER: bedrock
+          BEDROCK_LLM_MODEL: eu.anthropic.claude-haiku-4-5-20251001-v1:0
+          BEDROCK_EMBED_MODEL: amazon.titan-embed-text-v2:0
+        run: python -m run_eval
