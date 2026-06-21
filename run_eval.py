@@ -1,5 +1,7 @@
 # tiny eval harness: run fixed questions through the pipeline, check each answer holds the expected fact.
 # run: python -m eval
+
+import sys
 from rag import RagPipeline
 
 # (question, expected substring in the answer). "__REFUSE__" means we expect an "i don't know".
@@ -37,8 +39,14 @@ def main():
         if not ok:
             print(f"       expected: {expected!r}")
             print(f"       got:      {answer[:120]!r}")
-    print(f"\n{passed}/{len(CASES)} passed")
+    
 
+    total = len(CASES)
+    print(f"\n{passed}/{total} passed")
+
+    # exit non-zero if anything failed, so the workflow CI marks the run red in github actions
+    if passed < total:
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
