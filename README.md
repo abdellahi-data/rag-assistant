@@ -1,10 +1,14 @@
 # RAG Assistant
 
-A retrieval-augmented question-answering system over a corpus of company PDFs.
-Built to run identically on a local open-source stack (Ollama) or on AWS
-(Amazon Bedrock), switchable by configuration, not code and deploys to AWS Lambda
-as a containerized service provisioned with Terraform.
+An LLMOps project: a document Q&A system taken from local prototype to a fully
+deployed, auto-shipping AWS service. Retrieval-augmented generation over Amazon
+Bedrock, served by a containerized FastAPI app on AWS Lambda, with all
+infrastructure as code in Terraform and a CI/CD pipeline that tests every PR and
+deploys every merge.
 
+
+Not a notebook demo: this is the full LLMOPS path from prototype to production, with
+the deployment and automation as the point.
 ---
 
 ## What it does
@@ -128,7 +132,7 @@ So a push to a branch is tested via PR, and merging to `main` deploys
 automatically. App/code changes deploy through CD; infrastructure changes are
 applied manually via `terraform apply`.
 
-![test bedrock](docs/archi-services.png)
+![test bedrock](docs/output.png)
 
 ---
 
